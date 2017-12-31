@@ -42,15 +42,15 @@ public class TCPClient implements CommandLineRunner
 		try
 		{
 			/*
-			Poziva se metod processSerialized() zaduzen za procesiranje i eventualno slanje paketa
-			sacuvanih u prethodnoj sesiji
-			--------------------------------
 			Timer thread (daemon u ovom slucaju) se izvrasava u pozadini i na svakih 10ms pokrece metod run()
 			metod definisan u klasi Dispatcher koji je nasledjen od apstraktne klase TimerTask
+			--------------------------------
+			Poziva se metod processSerialized() zaduzen za procesiranje i eventualno slanje paketa
+			sacuvanih u prethodnoj sesiji
 			*/
-			processSerialized();
 			Timer dispatcherTimer = new Timer(true);
 			((Dispatcher)dispatcher).setOs(matildaSocket.getOutputStream());
+			processSerialized();
 			dispatcherTimer.schedule(dispatcher, 10,10);
 			
 			/*

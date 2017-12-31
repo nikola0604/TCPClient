@@ -11,13 +11,13 @@ public class PacketModel implements Serializable
 {
 	private byte[] byteData;
 	private long timeOfArrival;
-	private int milisecondsUntilDispatch;
+	private int millisecondsUntilDispatch;
 	
 	PacketModel(byte[] byteData, long timeOfArrival)
 	{
 		this.byteData = byteData.clone();
 		this.timeOfArrival = timeOfArrival;
-		this.milisecondsUntilDispatch = (int)byteData[12]*1000;
+		this.millisecondsUntilDispatch = (int)byteData[12]*1000;
 	}
 	
 	public byte[] getByteData()
@@ -32,12 +32,12 @@ public class PacketModel implements Serializable
 	
 	public void decrementSecondsUntilDispatch()
 	{
-		milisecondsUntilDispatch = milisecondsUntilDispatch - 10;
+		millisecondsUntilDispatch = millisecondsUntilDispatch - 10;
 	}
 	
 	public boolean checkSecondsUntilDispatch()
 	{
-		return milisecondsUntilDispatch <= 0;
+		return millisecondsUntilDispatch <= 0;
 	}
 	
 	public boolean packetExpirationCheck(long initTimestamp)

@@ -27,7 +27,7 @@ public class Dispatcher extends TimerTask
 	ima vise od 10 elemenata tako da je ova cena prihvatljiva.
 	 */
 	private ArrayList<PacketModel> packetModelArrayList = new ArrayList<>(20);
-	private Iterator<PacketModel> packageModelIterator;
+	private Iterator<PacketModel> packetModelIterator;
 	private PacketModel packetModel;
 	private DataOutputStream socketOutputStream;
 	
@@ -46,7 +46,7 @@ public class Dispatcher extends TimerTask
 		return packetModelArrayList;
 	}
 	
-	public void addToPackageModelArrayList(PacketModel packetModel)
+	public synchronized void addToPackageModelArrayList(PacketModel packetModel)
 	{
 		this.packetModelArrayList.add(packetModel);
 	}
@@ -82,21 +82,21 @@ public class Dispatcher extends TimerTask
 	public void dispatchDeserialized()
 	{
 		long initTimestamp = System.currentTimeMillis();
-		packageModelIterator = packetModelArrayList.iterator();
+		packetModelIterator = packetModelArrayList.iterator();
 		
-		while(packageModelIterator.hasNext())
+		while(packetModelIterator.hasNext())
 		{
-			packetModel = packageModelIterator.next();
+			packetModel = packetModelIterator.next();
 			
 			if(packetModel.packetExpirationCheck(initTimestamp))
 			{
 				dispatch(packetModel);
-				packageModelIterator.remove();
+				packetModelIterator.remove();
 			}
 			else
 			{
 				System.out.println((char)27 + "[34mPacket: " + packetModel.getPackageIDString() + " expired");
-				packageModelIterator.remove();
+				packetModelIterator.remove();
 			}
 		}
 	}
@@ -109,17 +109,17 @@ public class Dispatcher extends TimerTask
 	 */
 	public synchronized void run()
 	{
-		packageModelIterator = packetModelArrayList.iterator();
+		packetModelIterator = packetModelArrayList.iterator();
 		
-		while(packageModelIterator.hasNext())
+		while(packetModelIterator.hasNext())
 		{
-			packetModel = packageModelIterator.next();
+			packetModel = packetModelIterator.next();
 			packetModel.decrementSecondsUntilDispatch();
 
 			if(packetModel.checkSecondsUntilDispatch())
 			{
 				dispatch(packetModel);
-				packageModelIterator.remove();
+				packetModelIterator.remove();
 			}
 		}
 	}
