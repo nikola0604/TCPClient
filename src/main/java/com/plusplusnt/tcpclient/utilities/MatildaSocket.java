@@ -23,6 +23,7 @@ public class MatildaSocket
 		try
 		{
 			this.socket = new Socket("matilda.plusplus.rs", 4000);
+			this.socket.setSoTimeout(10000);
 			this.socket.setTcpNoDelay(true);
 			this.socketInputStream = new DataInputStream(socket.getInputStream());
 			this.socketOutputStream = new DataOutputStream(socket.getOutputStream());
@@ -32,6 +33,7 @@ public class MatildaSocket
 		catch(IOException ioe)
 		{
 			ioe.printStackTrace();
+			System.exit(1);
 		}
 	}
 	

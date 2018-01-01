@@ -1,6 +1,7 @@
 package com.plusplusnt.tcpclient.utilities;
 
 import com.plusplusnt.tcpclient.model.PacketModel;
+import com.plusplusnt.tcpclient.model.TCPClient;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -28,28 +29,30 @@ public class ShutdownHook
 				Kreiranje fajla i inicijalizacija ispisnih
 				tokova  kojim ce se serijalizovati paketi
 				 */
-				File serFile = new File("/tmp/packets.ser");
+				File serFile = new File("./src/main/resources/packets.ser");
 				if(!serFile.exists())
 					if(!serFile.createNewFile())
-						System.err.println("Serialization file not created!");
+						System.err.println((char)27 + "[31mSerialization file not created!");
 					else
 						System.out.println((char)27 + "[33mSerialization file created!");
 				else
-					System.err.println("Serialization file already exists, data will be truncated");
+					System.err.println((char)27 + "[31mSerialization file already exists, data will be truncated");
 
 				FileOutputStream serFileOutputStream = new FileOutputStream(serFile);
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(serFileOutputStream);
 
 				/*
-				Serijalizacija kolekcije (ArrayList) koja sadrzi
-				trenutno zive pakete uz ispit ID-eva sacuvanih paketa
+				Serijalizacija kolekcije (LinkedList) koja sadrzi
+				trenutno zive pakete uz ispis ID-eva sacuvanih paketa
 				 */
-				objectOutputStream.writeObject(dispatcher.getPacketModelArrayList());
+				objectOutputStream.writeObject(dispatcher.getPacketModelLinkedList());
 				
 				System.out.println("------------------------------");
-				for(PacketModel packetModel : dispatcher.getPacketModelArrayList())
-					System.out.println((char)27 + "[34mPacket saved: " + packetModel.getPackageIDString());
+				for(PacketModel packetModel : dispatcher.getPacketModelLinkedList())
+					System.out.println((char)27 + "[34mPacket saved: " + packetModel.getPacketIDString());
 				
+				serFileOutputStream.close();
+				objectOutputStream.close();
 				System.out.flush();
 			}
 			

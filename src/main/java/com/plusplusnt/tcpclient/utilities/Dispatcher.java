@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.DataOutputStream;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.TimerTask;
 
 /*
@@ -18,37 +18,41 @@ koji se u daemon thread-u izvrsava svakih 10ms
 public class Dispatcher extends TimerTask
 {
 	/*
-	Svi primljeni paketi (objekti u kojima su enkapsulirani) se cuvaju u nizu.
+	Svi primljeni paketi (objekti u kojima su enkapsulirani) se cuvaju u listi.
 	Za ovu strukturu podataka sam se odlucio jer metod Dispatcher.run() prolazi
-	kroz sve objekte na svakih 10ms gde je od pomoci sekvencijalno pozicioniranje
-	elemenata niza u memoriji. Dodavanje na kraj je asimptotske slozenosti O(1),
-	svaka promena nad atributima objekata se izvrsava u toku prolaska tako da nemamo
-	search nad strukturom. Brisanje elemenata nije jeftino ali se ne desava da lista
-	ima vise od 10 elemenata tako da je ova cena prihvatljiva.
+	kroz sve objekte na svakih 10ms tako da nam mana povezanih listi gde je trazenje
+	elemenata linearne slozenosti nije na smetnji jer nemamo pretragu za konkretnim objektom.
+	Dodavanje i brisanje iz liste je je asimptotske slozenosti O(1). Uzevsi u obzir da na svakih
+	10ms prolazimo kroz sve elemente dodatno mozemo ubrzati rad algoritma tako sto cemo cuvati pakete kao
+	primitivne tipove u nizu cime dobijamo da su svi elementi sekvencijalno upisani u memoriji.
+	Ovakav pristup bi dosta zakomplikovao kod i njegovu citljivost. Na osnovu testiranja
+	sam dosao do zakljucka da je cena koriscenja liste koja sadrzi reference na objekte koji su
+	"razbacani" u memoriji prihvatljiva jer dobijamo jednostavniji i citljiviji kod kao i modularniji
+	dizajn.
 	 */
-	private ArrayList<PacketModel> packetModelArrayList = new ArrayList<>(20);
+	private LinkedList<PacketModel> packetModelLinkedList = new LinkedList<>();
 	private Iterator<PacketModel> packetModelIterator;
 	private PacketModel packetModel;
 	private DataOutputStream socketOutputStream;
 	
-	public void setOs(DataOutputStream socketOutputStream)
+	public void setSocketOutputStream(DataOutputStream socketOutputStream)
 	{
 		this.socketOutputStream = socketOutputStream;
 	}
 	
-	public void setPacketModelArrayList(ArrayList<PacketModel> packetModelArrayList)
+	public void setPacketModelLinkedList(LinkedList<PacketModel> packetModelArrayList)
 	{
-		this.packetModelArrayList = packetModelArrayList;
+		this.packetModelLinkedList = packetModelArrayList;
 	}
 	
-	ArrayList<PacketModel> getPacketModelArrayList()
+	LinkedList<PacketModel> getPacketModelLinkedList()
 	{
-		return packetModelArrayList;
+		return packetModelLinkedList;
 	}
 	
-	public synchronized void addToPackageModelArrayList(PacketModel packetModel)
+	public synchronized void addToPacketModelLinkedList(PacketModel packetModel)
 	{
-		this.packetModelArrayList.add(packetModel);
+		this.packetModelLinkedList.add(packetModel);
 	}
 	
 	/*
@@ -60,7 +64,7 @@ public class Dispatcher extends TimerTask
 		{
 			socketOutputStream.write(packetModel.getByteData());
 			socketOutputStream.flush();
-			System.out.println((char)27 + "[32mCLIENT: dummy packet, ID: " +  packetModel.getPackageIDString() +
+			System.out.println((char)27 + "[32mCLIENT: dummy packet, ID: " +  packetModel.getPacketIDString() +
 					", time of dispatch: " + LocalDateTime.now());
 		}
 		catch (Exception exception)
@@ -82,7 +86,7 @@ public class Dispatcher extends TimerTask
 	public void dispatchDeserialized()
 	{
 		long initTimestamp = System.currentTimeMillis();
-		packetModelIterator = packetModelArrayList.iterator();
+		packetModelIterator = packetModelLinkedList.iterator();
 		
 		while(packetModelIterator.hasNext())
 		{
@@ -95,7 +99,7 @@ public class Dispatcher extends TimerTask
 			}
 			else
 			{
-				System.out.println((char)27 + "[34mPacket: " + packetModel.getPackageIDString() + " expired");
+				System.out.println((char)27 + "[34mPacket: " + packetModel.getPacketIDString() + " expired");
 				packetModelIterator.remove();
 			}
 		}
@@ -103,13 +107,13 @@ public class Dispatcher extends TimerTask
 	
 	/*
 	Metod koji daemon thread poziva svakih 10ms. Sekvencijalno prolazi
-	kroz ArrayList koji sadrzi zive pakete. Umanjuje preostalo vreme zivota
-	paketa za 10ms i ukoliko je milisecondsUntilDispatch == 0 poziva metod
+	kroz LinkedList koji sadrzi zive pakete. Umanjuje preostalo vreme zivota
+	paketa za 10ms i ukoliko je millisecondsUntilDispatch == 0 poziva metod
 	dispatch() kojim se paket vraca serveru.
 	 */
 	public synchronized void run()
 	{
-		packetModelIterator = packetModelArrayList.iterator();
+		packetModelIterator = packetModelLinkedList.iterator();
 		
 		while(packetModelIterator.hasNext())
 		{

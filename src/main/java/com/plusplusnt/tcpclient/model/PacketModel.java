@@ -25,7 +25,7 @@ public class PacketModel implements Serializable
 		return byteData;
 	}
 	
-	public String getPackageIDString()
+	public String getPacketIDString()
 	{
 		return byteData[8] + "|" + byteData[9] + "|" + byteData[10] + "|" + byteData[11];
 	}
